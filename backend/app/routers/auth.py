@@ -83,25 +83,32 @@ async def register(user_data: UserRegister, background_tasks: BackgroundTasks, d
 @router.post("/login")
 async def login(credentials: UserLogin, db=Depends(get_db)):
     try:
-        user = await db.users.find_one({"email": credentials.email.lower()})
-        if not user or not verify_password(credentials.password, user["hashed_password"]):
+        email = credentials.email.lower().strip()
+        user = await db.users.find_one({"email": email})
+        if not user:
             raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        if not verify_password(credentials.password, user.get("hashed_password", "")):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+            
         if not user.get("is_active", True):
             raise HTTPException(status_code=403, detail="Account has been disabled. Please contact the gym.")
 
-        token = create_access_token({"sub": str(user["_id"]), "role": user["role"]})
+        token = create_access_token({"sub": str(user["_id"]), "role": user.get("role", "member")})
 
-        return TokenResponse(
-            access_token=token,
-            user=UserResponse(**serialize_user(user)),
-        )
+        user_data = serialize_user(user)
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user": user_data
+        }
     except HTTPException:
         raise
     except Exception as e:
         import traceback
         tb = traceback.format_exc()
-        print(f"Login error: {tb}")
-        raise HTTPException(status_code=500, detail=f"Login error: {str(e)} | TB: {tb}")
+        print(f"Login Exception: {tb}")
+        raise HTTPException(status_code=500, detail=f"Login Exception: {str(e)}")
 
 
 @router.get("/me", response_model=UserResponse)
