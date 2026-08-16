@@ -48,7 +48,13 @@ async def catch_exceptions_middleware(request: Request, call_next):
             content={"error": str(exc), "traceback": tb.splitlines()}
         )
 
-# Register routers under /api/v1 prefix
+# Register routers both with and without /api/v1 prefix
+app.include_router(auth.router)
+app.include_router(members.router)
+app.include_router(workouts.router)
+app.include_router(nutrition.router)
+app.include_router(admin.router)
+
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(members.router, prefix="/api/v1")
 app.include_router(workouts.router, prefix="/api/v1")
