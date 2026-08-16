@@ -12,23 +12,39 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 def serialize_user(user: dict) -> dict:
+    created_at_val = user.get("created_at")
+    if isinstance(created_at_val, datetime):
+        created_at_str = created_at_val.isoformat()
+    elif isinstance(created_at_val, str):
+        created_at_str = created_at_val
+    else:
+        created_at_str = datetime.now(timezone.utc).isoformat()
+
+    prem_val = user.get("premium_activated_at")
+    if isinstance(prem_val, datetime):
+        prem_str = prem_val.isoformat()
+    elif isinstance(prem_val, str):
+        prem_str = prem_val
+    else:
+        prem_str = None
+
     return {
         "id": str(user["_id"]),
-        "name": user["name"],
-        "email": user["email"],
-        "gender": user["gender"],
-        "age": user["age"],
-        "height": user["height"],
-        "weight": user["weight"],
-        "phone": user["phone"],
-        "fitness_goal": user["fitness_goal"],
-        "dietary_preference": user["dietary_preference"],
+        "name": user.get("name", ""),
+        "email": user.get("email", ""),
+        "gender": user.get("gender", "male"),
+        "age": user.get("age", 20),
+        "height": user.get("height", 170.0),
+        "weight": user.get("weight", 70.0),
+        "phone": user.get("phone", ""),
+        "fitness_goal": user.get("fitness_goal", "maintain"),
+        "dietary_preference": user.get("dietary_preference", "vegetarian"),
         "activity_level": user.get("activity_level", "moderate"),
-        "role": user["role"],
-        "membership_type": user["membership_type"],
+        "role": user.get("role", "member"),
+        "membership_type": user.get("membership_type", "standard"),
         "is_active": user.get("is_active", True),
-        "premium_activated_at": user.get("premium_activated_at").isoformat() if user.get("premium_activated_at") else None,
-        "created_at": user.get("created_at").isoformat() if user.get("created_at") else datetime.now(timezone.utc).isoformat(),
+        "premium_activated_at": prem_str,
+        "created_at": created_at_str,
     }
 
 
