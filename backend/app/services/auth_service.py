@@ -1,18 +1,14 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt as _bcrypt_lib
+import jwt as pyjwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config import get_settings
 from app.database import get_db
 
 settings = get_settings()
-# Passlib removed to prevent Linux bcrypt conflicts
 security = HTTPBearer()
-
-
-import bcrypt as _bcrypt_lib
 
 def hash_password(password: str) -> str:
     salt = _bcrypt_lib.gensalt()
@@ -26,7 +22,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 
-import jwt as pyjwt
+
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
