@@ -102,13 +102,14 @@ async def login(credentials: UserLogin, db=Depends(get_db)):
             "token_type": "bearer",
             "user": user_data
         }
-    except HTTPException:
-        raise
+    except HTTPException as he:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=he.status_code, content={"detail": he.detail})
     except Exception as e:
         import traceback
         tb = traceback.format_exc()
-        print(f"Login Exception: {tb}")
-        raise HTTPException(status_code=500, detail=f"Login Exception: {str(e)}")
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=500, content={"detail": str(e), "traceback": tb.splitlines()})
 
 
 @router.get("/me", response_model=UserResponse)
