@@ -1,0 +1,60 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from app.database import connect_db, close_db
+from app.config import get_settings
+from app.routers import auth, members, workouts, nutrition, admin
+
+settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await connect_db()
+    yield
+    await close_db()
+
+
+app = FastAPI(
+    title="Praveen Gym Portal API",
+    description="Backend API for Praveen Gym Portal — member management, workouts, nutrition, and admin.",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# CORS configuration
+origins = [
+    settings.FRONTEND_URL,
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Register routers
+app.include_router(auth.router)
+app.include_router(members.router)
+app.include_router(workouts.router)
+app.include_router(nutrition.router)
+app.include_router(admin.router)
+
+
+@app.get("/", tags=["Health"])
+async def root():
+    return {
+        "service": "Praveen Gym Portal API",
+        "status": "running",
+        "version": "1.0.0",
+        "tagline": "Train Smart. Eat Better. Become Stronger.",
+    }
+
+
+@app.get("/health", tags=["Health"])
+async def health():
+    return {"status": "ok"}
