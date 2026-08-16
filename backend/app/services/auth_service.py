@@ -8,7 +8,7 @@ from app.config import get_settings
 from app.database import get_db
 
 settings = get_settings()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Passlib removed to prevent Linux bcrypt conflicts
 security = HTTPBearer()
 
 
