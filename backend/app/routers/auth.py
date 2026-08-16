@@ -99,33 +99,28 @@ async def register(user_data: UserRegister, background_tasks: BackgroundTasks, d
 @router.post("/login")
 async def login(credentials: UserLogin, db=Depends(get_db)):
     try:
+        if db is None:
+            return JSONResponse(status_code=500, content={"detail": "Database connection is None"})
+            
         email = credentials.email.lower().strip()
         user = await db.users.find_one({"email": email})
         if not user:
-            raise HTTPException(status_code=401, detail="Invalid email or password")
-        
-        if not verify_password(credentials.password, user.get("hashed_password", "")):
-            raise HTTPException(status_code=401, detail="Invalid email or password")
+            return JSONResponse(status_code=401, content={"detail": "Invalid email or password"})
             
-        if not user.get("is_active", True):
-            raise HTTPException(status_code=403, detail="Account has been disabled. Please contact the gym.")
+        import bcrypt as _b
+        hp = user.get("hashed_password", "")
+        if not hp or not _b.checkpw(credentials.password.encode('utf-8'), hp.encode('utf-8')):
+            return JSONResponse(status_code=401, content={"detail": "Invalid email or password"})
 
         token = create_access_token({"sub": str(user["_id"]), "role": user.get("role", "member")})
-
-        user_data = serialize_user(user)
         return {
             "access_token": token,
             "token_type": "bearer",
-            "user": user_data
+            "user": serialize_user(user)
         }
-    except HTTPException as he:
-        from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=he.status_code, content={"detail": he.detail})
     except Exception as e:
         import traceback
-        tb = traceback.format_exc()
-        from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=500, content={"detail": str(e), "traceback": tb.splitlines()})
+        return JSONResponse(status_code=500, content={"error": str(e), "traceback": traceback.format_exc().splitlines()})
 
 
 @router.get("/me", response_model=UserResponse)
