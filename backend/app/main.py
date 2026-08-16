@@ -33,32 +33,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi import Request
 from fastapi.responses import JSONResponse
 import traceback
 
 @app.middleware("http")
-async def catch_exceptions_middleware(request, call_next):
+async def catch_exceptions_middleware(request: Request, call_next):
     try:
         return await call_next(request)
     except Exception as exc:
         tb = traceback.format_exc()
         return JSONResponse(
             status_code=500,
-            content={"detail": f"MIDDLEWARE ERROR: {str(exc)}", "traceback": tb.splitlines()}
+            content={"error": str(exc), "traceback": tb.splitlines()}
         )
-
-from fastapi import Request
-from fastapi.responses import JSONResponse
-import traceback
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    tb = traceback.format_exc()
-    print(f"GLOBAL ERROR: {tb}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": str(exc), "traceback": tb.splitlines()}
-    )
 
 # Register routers
 app.include_router(auth.router)
@@ -66,6 +54,18 @@ app.include_router(members.router)
 app.include_router(workouts.router)
 app.include_router(nutrition.router)
 app.include_router(admin.router)
+
+
+@app.get("/test-db", tags=["Health"])
+async def test_db():
+    from app.database import get_db
+    try:
+        db = get_db()
+        count = await db.users.count_documents({})
+        return {"status": "ok", "user_count": count}
+    except Exception as e:
+        tb = traceback.format_exc()
+        return JSONResponse(status_code=500, content={"error": str(e), "traceback": tb.splitlines()})
 
 
 @app.get("/", tags=["Health"])
