@@ -44,35 +44,32 @@ def _get_html_base(title: str, body_content: str) -> str:
 
 
 async def send_registration_email(name: str, email: str, membership_type: str = "standard"):
-    subject = "Welcome to Praveen Gym Portal! 🏋️"
-    body_content = f"""
-    <div class="header">
-      <h1>🏋️ Praveen Gym Portal</h1>
-      <p>Train Smart. Eat Better. Become Stronger.</p>
-    </div>
-    <div class="body">
-      <h2>Welcome, {name}! 🎉</h2>
-      <p>Your registration is successful. You are now a member of <strong>Praveen Gym Portal</strong>.</p>
-      <div class="highlight">
-        <p>📧 <strong>Email:</strong> {email}</p>
-        <p>🏅 <strong>Membership:</strong> <span class="badge">{membership_type.upper()}</span></p>
-      </div>
-      <p>With your Standard membership you can access:</p>
-      <div class="features">
-        <ul>
-          <li>📅 Weekly workout plan (Mon–Sat)</li>
-          <li>💪 Today's personalised workout</li>
-          <li>👤 Your profile and membership info</li>
-          <li>😴 Sunday rest day tracking</li>
-        </ul>
-      </div>
-      <p><strong>Want to unlock Premium features?</strong></p>
-      <p>Visit the gym, pay at the counter in cash, and our Admin will activate your Premium membership — giving you access to full diet guidance, nutrition calculations, and meal suggestions tailored to your goals.</p>
-      <a href="{settings.FRONTEND_URL}/login" class="btn">Login to Portal →</a>
-    </div>
-    """
-    html_content = _get_html_base(subject, body_content)
-    await _send_email(to_email=email, subject=subject, html_content=html_content)
+    if not settings.RESEND_API_KEY or settings.RESEND_API_KEY == "":
+        print(f"[EMAIL SKIPPED - No API key] To: {email}")
+        return
+
+    try:
+        subject = "Welcome to Praveen Gym Portal! 🏋️"
+        body_content = f"""
+        <div class="header">
+          <h1>🏋️ Praveen Gym Portal</h1>
+          <p>Train Smart. Eat Better. Become Stronger.</p>
+        </div>
+        <div class="body">
+          <h2>Welcome, {name}! 🎉</h2>
+          <p>Your registration is successful. You are now a member of <strong>Praveen Gym Portal</strong>.</p>
+          <div class="highlight">
+            <p>📧 <strong>Email:</strong> {email}</p>
+            <p>🏅 <strong>Membership:</strong> <span class="badge">{membership_type.upper()}</span></p>
+          </div>
+          <p>With your Standard membership you can access your workout plans and profile.</p>
+          <a href="{settings.FRONTEND_URL}/login" class="btn">Login to Portal →</a>
+        </div>
+        """
+        html_content = _get_html_base(subject, body_content)
+        await _send_email(to_email=email, subject=subject, html_content=html_content)
+    except Exception as e:
+        print(f"Email sending error (ignored): {e}")
 
 
 async def send_premium_activation_email(name: str, email: str, activated_by: str):
