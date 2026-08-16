@@ -27,8 +27,8 @@ def serialize_user(user: dict) -> dict:
         "role": user["role"],
         "membership_type": user["membership_type"],
         "is_active": user.get("is_active", True),
-        "premium_activated_at": user.get("premium_activated_at"),
-        "created_at": user["created_at"],
+        "premium_activated_at": user.get("premium_activated_at").isoformat() if user.get("premium_activated_at") else None,
+        "created_at": user.get("created_at").isoformat() if user.get("created_at") else datetime.now(timezone.utc).isoformat(),
     }
 
 
