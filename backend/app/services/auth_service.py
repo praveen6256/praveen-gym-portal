@@ -15,18 +15,15 @@ security = HTTPBearer()
 import bcrypt as _bcrypt_lib
 
 def hash_password(password: str) -> str:
-    try:
-        return pwd_context.hash(password)
-    except Exception:
-        salt = _bcrypt_lib.gensalt()
-        return _bcrypt_lib.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+    salt = _bcrypt_lib.gensalt()
+    return _bcrypt_lib.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
-        return pwd_context.verify(plain_password, hashed_password)
-    except Exception:
         return _bcrypt_lib.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception:
+        return False
 
 
 def create_access_token(data: dict) -> str:
