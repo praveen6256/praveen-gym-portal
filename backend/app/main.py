@@ -33,6 +33,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.responses import JSONResponse
+import traceback
+
+@app.middleware("http")
+async def catch_exceptions_middleware(request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        tb = traceback.format_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"MIDDLEWARE ERROR: {str(exc)}", "traceback": tb.splitlines()}
+        )
+
 from fastapi import Request
 from fastapi.responses import JSONResponse
 import traceback
