@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from datetime import datetime, timezone
+from app.config import get_settings
 from app.models.user import UserRegister, UserLogin, TokenResponse, UserResponse
 from app.services.auth_service import (
     hash_password, verify_password, create_access_token, get_current_user
@@ -65,12 +66,13 @@ async def register(user_data: UserRegister, background_tasks: BackgroundTasks, d
 
     token = create_access_token({"sub": str(result.inserted_id), "role": "member"})
 
-    background_tasks.add_task(
-        send_registration_email,
-        name=user_data.name,
-        email=user_data.email,
-        membership_type="standard",
-    )
+    if get_settings().RESEND_API_KEY:
+        background_tasks.add_task(
+            send_registration_email,
+            name=user_data.name,
+            email=user_data.email,
+            membership_type="standard",
+        )
 
     return TokenResponse(
         access_token=token,
