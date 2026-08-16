@@ -7,9 +7,11 @@ client: AsyncIOMotorClient = None
 db = None
 
 
+import certifi
+
 async def connect_db():
     global client, db
-    client = AsyncIOMotorClient(settings.MONGODB_URL)
+    client = AsyncIOMotorClient(settings.MONGODB_URL, tlsCAFile=certifi.where())
     db = client[settings.DATABASE_NAME]
     # Create indexes
     await db.users.create_index("email", unique=True)
