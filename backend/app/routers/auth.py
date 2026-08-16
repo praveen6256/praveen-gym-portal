@@ -80,7 +80,7 @@ async def register(user_data: UserRegister, background_tasks: BackgroundTasks, d
     )
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login")
 async def login(credentials: UserLogin, db=Depends(get_db)):
     try:
         user = await db.users.find_one({"email": credentials.email.lower()})
