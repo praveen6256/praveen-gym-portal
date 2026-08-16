@@ -98,28 +98,40 @@ async def register(user_data: UserRegister, background_tasks: BackgroundTasks, d
 
 @router.post("/login")
 async def login(credentials: UserLogin, db=Depends(get_db)):
+    from fastapi.responses import JSONResponse
+    import traceback
     try:
         if db is None:
             return JSONResponse(status_code=500, content={"detail": "Database connection is None"})
             
         email = credentials.email.lower().strip()
-        user = await db.users.find_one({"email": email})
+        try:
+            user = await db.users.find_one({"email": email})
+        except Exception as dbe:
+            return JSONResponse(status_code=500, content={"error": f"DB Find Error: {str(dbe)}", "traceback": traceback.format_exc().splitlines()})
+            
         if not user:
             return JSONResponse(status_code=401, content={"detail": "Invalid email or password"})
             
-        import bcrypt as _b
-        hp = user.get("hashed_password", "")
-        if not hp or not _b.checkpw(credentials.password.encode('utf-8'), hp.encode('utf-8')):
-            return JSONResponse(status_code=401, content={"detail": "Invalid email or password"})
+        try:
+            import bcrypt as _b
+            hp = user.get("hashed_password", "")
+            if not hp or not _b.checkpw(credentials.password.encode('utf-8'), hp.encode('utf-8')):
+                return JSONResponse(status_code=401, content={"detail": "Invalid email or password"})
+        except Exception as bce:
+            return JSONResponse(status_code=500, content={"error": f"Bcrypt Check Error: {str(bce)}", "traceback": traceback.format_exc().splitlines()})
 
-        token = create_access_token({"sub": str(user["_id"]), "role": user.get("role", "member")})
-        return {
-            "access_token": token,
-            "token_type": "bearer",
-            "user": serialize_user(user)
-        }
+        try:
+            token = create_access_token({"sub": str(user["_id"]), "role": user.get("role", "member")})
+            ser_user = serialize_user(user)
+            return {
+                "access_token": token,
+                "token_type": "bearer",
+                "user": ser_user
+            }
+        except Exception as te:
+            return JSONResponse(status_code=500, content={"error": f"Token/Serialize Error: {str(te)}", "traceback": traceback.format_exc().splitlines()})
     except Exception as e:
-        import traceback
         return JSONResponse(status_code=500, content={"error": str(e), "traceback": traceback.format_exc().splitlines()})
 
 
